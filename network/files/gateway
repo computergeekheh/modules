@@ -1,0 +1,6 @@
+#!/bin/bash
+
+export FACTER_gateway=`netstat -rn|awk '{print $2}'|grep -v 0.0.0.0|grep -v Gateway|grep -v IP`
+
+
+

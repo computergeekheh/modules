@@ -1,0 +1,112 @@
+#
+#
+class ceph {
+
+#	ceph_install_disk { $disks: }
+
+            file { "/tmp/kernel-3.11.0-UL1.el6.x86_64.rpm":
+                owner   => "root",
+                group   => "root",
+                mode    => 0644,
+                source  => "puppet://puppet/modules/ceph/kernel-3.11.0-UL1.el6.x86_64.rpm";
+            }
+            exec { "kernel-install":
+                command     => "/usr/bin/yum install -y /tmp/kernel-3.11.0-UL1.el6.x86_64.rpm ",
+                timeout     => 7200,
+                unless      => "/bin/uname -r | /bin/grep 3.11.0-UL1.el6 ",
+                require     => File["/tmp/kernel-3.11.0-UL1.el6.x86_64.rpm"];
+            }
+            exec { "kernel-reboot":
+                command     => "/sbin/reboot ",
+                unless      => "/bin/uname -r | /bin/grep 3.11.0-UL1.el6 ",
+                require     => Exec["kernel-install"];
+            }
+        package { ['ceph-deploy', 'ceph']: ensure  => latest, require => Exec["kernel-reboot"]; }
+
+             exec { "install-cluster":
+                command     => "/usr/bin/ssh $primary 'ceph-deploy new {$quarum} '  ",
+                timeout     => 7200,
+                unless      => "/usr/bin/ssh $primary '/bin/ls /root/ | grep ceph.conf ' ",
+                require     => Package["ceph-deploy", "ceph"];
+            }
+             exec { "install-cluster-quarum":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy mon create {$quarum} '  ",
+                timeout     => 7200,
+                unless      => "/usr/bin/ssh $primary '/bin/ls /etc/ceph | grep ceph.conf ' ",
+                require     => Exec["install-cluster"];
+            }
+             exec { "gather-keys":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy gatherkeys $primary ' ",
+                require     => Exec["install-cluster-quarum"];
+            }
+}
+define ceph_install ( $role="none" ) {
+		
+             #exec { "install-cluster-$role":
+             #   command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy new \{ $quarum \}'  ",
+             #   timeout     => 7200,
+             #   unless      => "/usr/bin/ssh $primary '/bin/ls /root/ | grep ceph.conf ' ",
+             #   require     => Package["ceph-deploy"];
+             #}
+             #exec { "install-cluster-quarum-$role":
+             #   command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy mon create \{ $quarum \}'  ",
+             #   timeout     => 7200,
+             #   unless      => "/usr/bin/ssh $primary '/bin/ls /root/ | grep ceph.conf ' ",
+             #   require     => Exec["install-cluster-$role"];
+             #}
+             exec { "install-$role":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy $role create $fqdn ' ",
+                timeout     => 7200,
+                unless      => "/usr/bin/ssh $primary '/usr/bin/ceph -s | /bin/grep $role.map | /bin/grep $hostname ' ",
+                onlyif      => "/usr/bin/ssh $primary '/usr/bin/ceph -s ' ",
+                require     => Exec["install-cluster-quarum"];
+            }
+             exec { "gather-keys-$role":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy gatherkeys $fqdn ' ",
+                require     => Exec["install-$role"];
+            }
+             exec { "deploy-admin-$role":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy admin $fqdn ' ",
+                require     => Exec["gather-keys-$role"];
+             }
+}
+define ceph_install_disk ( $disks="none" ) {
+
+	     exec { "zap-disk-$name":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy disk zap $fqdn:$name ' ",
+                timeout     => 7200,
+                unless      => "/usr/bin/ssh $fqdn '/bin/mount | grep $name ' ",
+		onlyif 	    => "/usr/bin/ssh $primary '/usr/bin/ceph -s ' ",
+                require     => Exec["install-cluster-quarum"];
+             }
+             exec { "gather-keys-$name":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy gatherkeys $fqdn ' ",
+		# for some reson, it needs to sync the keys one more time.. so we will just do this
+                require     => Exec["zap-disk-$name"];
+             }
+             exec { "deploy-admin-$name":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy admin $fqdn ' ",
+                require     => Exec["gather-keys-$name"];
+             }
+             exec { "osd-create-$name":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph-deploy osd create $fqdn:$name ' ",
+                timeout     => 7200,
+                unless      => "/usr/bin/ssh $fqdn '/bin/mount | grep $name ' ",
+                onlyif      => "/usr/bin/ssh $primary '/usr/bin/ceph -s ' ",
+                require     => Exec["deploy-admin-$name"];
+             }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

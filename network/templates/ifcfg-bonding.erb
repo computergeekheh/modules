@@ -1,0 +1,31 @@
+# Bonding configuration
+# # 
+ DEVICE=<%= name %>
+ BOOTPROTO=<%= bootproto %>
+ <%    if macaddress != "" -%>
+ HWADDR=<%= macaddress %>
+ <%    end -%>
+ ONBOOT=<%= onboot %>
+ <%    if bonding != "" -%>
+ BONDING_OPTS="<%= bonding %>"
+ <%    end -%>
+ <%    if vlan != "" -%>
+ VLAN=yes
+ <%    end -%>
+ <% case bootproto
+     when 'static': -%>
+     IPADDR=<%= ipaddress %>
+     NETMASK=<%= netmask %>
+     NETWORK=<%= network %>
+     <%    if gateway != "" -%>
+     GATEWAY=<%= gateway %>
+     <%    end -%>
+     <%  when 'none': -%>
+     MASTER=<%= master %>
+     SLAVE=yes
+     <%  when 'dhcp': -%>
+     DHCP_HOSTNAME=<%= fqdn %>
+     <%  else
+             raise Exception.new("Error #{bootproto}, needs static or dhcp")
+             end -%>
+

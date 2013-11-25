@@ -1,0 +1,35 @@
+# Network configuration
+# # 
+DEVICE=<%= name %>
+BOOTPROTO=<%= bootproto %>
+<% if macaddress != "" -%>
+HWADDR=<%= scope[@mac] %>
+<% end -%>
+ONBOOT=<%= onboot %>
+<% if bonding != "" -%>
+BONDING_OPTS="<%= bonding %>"
+<% end -%>
+<% if vlan != "" -%>
+VLAN=yes
+<% end -%>
+<% case bootproto
+     when 'static': -%>
+<% if scope[@ip] -%>
+IPADDR=<%= scope[@ip] %>
+NETMASK=<%= scope[@mask] %>
+<% else -%>
+IPADDR=<%= ipaddress %>
+NETMASK=<%= netmask %>
+<% end -%>
+<% if gateway != "" -%>
+GATEWAY=<%= gateway %>
+<% end -%>
+<%  when 'none': -%>
+MASTER=<%= master %>
+SLAVE=yes
+<% when 'dhcp': -%>
+DHCP_HOSTNAME=<%= fqdn %>
+<% else
+             raise Exception.new("Error #{bootproto}, needs to be static or dhcp")
+             end -%>
+
