@@ -18,7 +18,7 @@ class disk-config {
         group    => 'root',
         mode     => '755',
         ensure   => present,
-        source   => "puppet://puppet/modules/disk-config/fdisk.default",
+        source   => "puppet:///modules/disk-config/fdisk.default",
 #	require  => Service["puppet"];
     }
 }

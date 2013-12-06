@@ -34,7 +34,7 @@ class network {
     file { "/usr/lib/ruby/site_ruby/1.8/facter/gateway.rb":
         ensure  => present,
         mode    => 0655,
-        source  => "puppet://puppet/modules/network/gateway.rb",
+        source  => "puppet:///modules/network/gateway.rb",
         require => Package["vconfig"];
     }
     exec { "service network restart":
@@ -46,7 +46,7 @@ class network {
     file { "/tmp/gateway":
         ensure  => present,
         mode    => 0655,
-        source  => "puppet://puppet/modules/network/gateway",
+        source  => "puppet:///modules/network/gateway",
         require => File["/usr/lib/ruby/site_ruby/1.8/facter/gateway.rb"];
     }
     exec { "facter-kick":

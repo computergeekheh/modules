@@ -105,8 +105,8 @@ define openstack_install ( $horizon="none", $keystone="none", $quantum="none", $
                 content => template( "openstack/packstack-answers_all_in_one.erb" ),
                 require => Package["openstack-packstack"];
             }
-            file { "/usr/lib/python2.6/site-packages/packstack/puppet/templates/prescript.pp":
-                source  => "puppet://puppet/modules/openstack/prescript.pp",
+            file { "/usr/lib/python2.6/site-packages/packstack//gtemplates/prescript.pp":
+                source  => "puppet:///modules/openstack/prescript.pp",
                 require => File["/tmp/packstack-answers.$fqdn"];
             }
 	    exec { "packstack-install":
@@ -115,7 +115,7 @@ define openstack_install ( $horizon="none", $keystone="none", $quantum="none", $
 		timeout     => 7200,
 		unless 	    => "/sbin/chkconfig --list | /bin/grep openstack",
                 onlyif      => "/usr/bin/facter | /bin/grep 'gateway =>'",
-		require     => File["/usr/lib/python2.6/site-packages/packstack/puppet/templates/prescript.pp"];
+		require     => File["/usr/lib/python2.6/site-packages/packstack//gtemplates/prescript.pp"];
 	    }
             exec { "set mysql for add on":
                 command     => "/usr/bin/mysql --user=root --password=$password -NBe \"grant ALL on *.* to 'root'@'%' identified by '$password'\"",
@@ -145,8 +145,8 @@ define openstack_install ( $horizon="none", $keystone="none", $quantum="none", $
                 onlyif      => "/bin/grep $dashboard /tmp/packstack-answers.$fqdn",
                 require     => File["/tmp/packstack-answers.$fqdn"];
             }
-            file { "/usr/lib/python2.6/site-packages/packstack/puppet/templates/prescript.pp":
- 		source  => "puppet://puppet/modules/openstack/prescript.pp",
+            file { "/usr/lib/python2.6/site-packages/packstack//gtemplates/prescript.pp":
+ 		source  => "puppet:///modules/openstack/prescript.pp",
                 require => Exec["node specific answer change"];
             }
             exec { "packstack-install":
@@ -155,7 +155,7 @@ define openstack_install ( $horizon="none", $keystone="none", $quantum="none", $
                 timeout     => 7200,
                 unless      => "/sbin/chkconfig --list | /bin/grep openstack",
                 onlyif      => "/usr/bin/facter | /bin/grep 'gateway =>'",
-                require     => File["/usr/lib/python2.6/site-packages/packstack/puppet/templates/prescript.pp"];
+                require     => File["/usr/lib/python2.6/site-packages/packstack//gtemplates/prescript.pp"];
             }
 	  }
 	}
@@ -256,8 +256,8 @@ define openstack_install ( $horizon="none", $keystone="none", $quantum="none", $
                 content => template( "openstack/packstack-answers_all_in_one.erb" ),
                 require => Package["openstack-packstack"];
             }
-            file { "/usr/lib/python2.6/site-packages/packstack/puppet/templates/prescript.pp":
-                source  => "puppet://puppet/modules/openstack/prescript.pp",
+            file { "/usr/lib/python2.6/site-packages/packstack//gtemplates/prescript.pp":
+                source  => "puppet:///modules/openstack/prescript.pp",
                 require => File["/tmp/packstack-answers.$fqdn"];
             }
             exec { "packstack-install":
@@ -266,7 +266,7 @@ define openstack_install ( $horizon="none", $keystone="none", $quantum="none", $
                 timeout     => 7200,
                 unless      => "/sbin/chkconfig --list | /bin/grep openstack",
                 onlyif      => "/usr/bin/facter | /bin/grep 'gateway =>'",
-                require     => File["/usr/lib/python2.6/site-packages/packstack/puppet/templates/prescript.pp"];
+                require     => File["/usr/lib/python2.6/site-packages/packstack//gtemplates/prescript.pp"];
             }
             exec { "set mysql for add on":
                 command     => "/usr/bin/mysql --user=root --password=$password -NBe \"grant ALL on *.* to 'root'@'%' identified by '$password'\"",
@@ -296,8 +296,8 @@ define openstack_install ( $horizon="none", $keystone="none", $quantum="none", $
                 onlyif      => "/bin/grep $dashboard /tmp/packstack-answers.$fqdn",
                 require     => File["/tmp/packstack-answers.$fqdn"];
             }
-            file { "/usr/lib/python2.6/site-packages/packstack/puppet/templates/prescript.pp":
-                source  => "puppet://puppet/modules/openstack/prescript.pp",
+            file { "/usr/lib/python2.6/site-packages/packstack//gtemplates/prescript.pp":
+                source  => "puppet:///modules/openstack/prescript.pp",
                 require => Exec["node specific answer change"];
             }
             exec { "packstack-install":
@@ -306,7 +306,7 @@ define openstack_install ( $horizon="none", $keystone="none", $quantum="none", $
                 timeout     => 7200,
                 unless      => "/sbin/chkconfig --list | /bin/grep openstack",
                 onlyif      => "/usr/bin/facter | /bin/grep 'gateway =>'",
-                require     => File["/usr/lib/python2.6/site-packages/packstack/puppet/templates/prescript.pp"];
+                require     => File["/usr/lib/python2.6/site-packages/packstack//gtemplates/prescript.pp"];
             }
           }
         }
