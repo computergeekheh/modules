@@ -28,8 +28,7 @@ class server-config {
       include ssh-keys
       include ceph
       include rdo_openstack
-        class {'rdo_openstack::install': install_mode => 'all-in-one', openstack_private_interface => 'em2';}
-	class {'rdo_openstack::ceph_storage': rbd => 'ceph'; }
+        class {'rdo_openstack::install': install_mode => 'all-in-one', openstack_private_interface => 'em2', rbd => 'ceph';}
         class {'ceph::kernel': ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
 	disk_standard { "standard": }  							# <== 20G swap, the rest on / 
 	network_interface {"em1": bootproto   => "static";  				# <== converts the dhcp to static

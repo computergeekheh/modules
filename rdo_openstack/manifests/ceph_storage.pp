@@ -1,6 +1,6 @@
 
 
-class rdo_openstack::ceph_storage ( $rbd = "ceph" )  {
+class rdo_openstack::ceph_storage ( $rbd = "ceph" ) {
 
         case $rbd {
 
@@ -10,7 +10,7 @@ class rdo_openstack::ceph_storage ( $rbd = "ceph" )  {
                 command     => "/usr/bin/ssh $cluster_head 'ceph-deploy admin $hostname' ",
                 unless      => "/usr/bin/ceph -s ",
                 #onlyif      => "/usr/bin/ssh $cluster_head 'ceph -s' | /bin/grep cluster ",
-                require     => [Package["ceph"], Exec["packstack-install"]];
+                require     => Package["ceph"];
             }
             exec { "rdo keys prep":
                 command     => "/usr/bin/ssh $cluster_head 'ceph-deploy gatherkeys $hostname' ",
@@ -37,11 +37,12 @@ class rdo_openstack::ceph_storage ( $rbd = "ceph" )  {
                 require => File["/etc/nova/nova.conf"];
             }
 
-        service { "openstack-nova-compute":    ensure => running, require => Exec["packstack-install"]; }
-        service { "openstack-cinder-scheduler":    ensure => running, require => Exec["packstack-install"]; }
-        service { "openstack-cinder-volume": ensure => running, require => Exec["packstack-install"]; }
-        service { "openstack-cinder-api":      ensure => running, require => Exec["packstack-install"]; }
+        service { "openstack-nova-compute":    ensure => running; }
+        service { "openstack-cinder-scheduler":    ensure => running; }
+        service { "openstack-cinder-volume": ensure => running; }
+        service { "openstack-cinder-api":      ensure => running; }
 
           }
         }
+	#Class['rdo_openstack::install'] -> Class['rdo_openstack::ceph_storage']
 }
