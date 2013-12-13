@@ -1,0 +1,48 @@
+
+[DEFAULT]
+
+osapi_volume_listen=0.0.0.0
+
+api_paste_config=/etc/cinder/api-paste.ini
+
+glance_host=<%= dashboard %>
+
+auth_strategy=keystone
+
+debug=False
+
+verbose=False
+
+rpc_backend=cinder.openstack.common.rpc.impl_qpid
+
+qpid_hostname=<%= dashboard %>
+
+qpid_port=5672
+
+qpid_username=guest
+
+qpid_password=notused
+
+qpid_heartbeat=60
+
+qpid_protocol=tcp
+
+qpid_tcp_nodelay=true
+
+iscsi_ip_address=<%= dashboard %>
+
+iscsi_helper=tgtadm
+
+volume_group=cinder-volumes
+
+volume_driver=cinder.volume.driver.RBDDriver
+rbd_pool=<%= ceph_rdo_pool_name %>
+
+sql_connection=mysql://cinder:<%= password %>@<%= dashboard %>/cinder
+qpid_reconnect_timeout=0
+qpid_reconnect_limit=0
+qpid_reconnect=true
+qpid_reconnect_interval_max=0
+qpid_reconnect_interval_min=0
+qpid_reconnect_interval=0
+notification_driver=cinder.openstack.common.notifier.rpc_notifier
