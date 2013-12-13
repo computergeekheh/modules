@@ -11,14 +11,13 @@ class server-config {
                                                                                        
  	$cluster_head = "ceph01.athenalab.athenahealth.com"
    	#    openstack_cluster' 							# <== defines global parameters for the openstack system
-	$dashboard = "openstack.ncce.com"					# <== dashboard is the horizon server. This should be brought up first.
-        $openstack_private_interface = "em2"
+	$dashboard = "openstack.athenalab.athenahealth.com"				# <== dashboard is the horizon server. This should be brought up first.
         $openstack_private_ip_range  = "10.10.4.0/22"
         $openstack_floating_ip_range = "10.10.4.0/22"
         $password = "password"                                                  # <== the admin password for the Horizon Dashboard
-        $ntp_server = "0.centos.pool.ntp.org"
+        $ntp_server = "0.rhel.pool.ntp.org"
         $ceph_cluster = "yes"
-        $cephfs = "yes"                                                         # <== This will install the cephFS kernel
+        $cephfs = "no"                                                         # <== This will install the cephFS kernel
         $cephfs_mounts = "no"                                                   # <== This will install the cephFS, mount it, and present it to cinder
         $ceph_rdo = "yes"                                                       # <== this will allow Openstack to access the ceph Object Store
         $ceph_rdo_pool_name = "rbd"                                             # <== This will auto creat a pool in the object store. Use the default rbd normally.
@@ -27,15 +26,16 @@ class server-config {
 
    node 'openstack' inherits cluster {
       include ssh-keys
-      #include openstack
+      include ceph
+      include rdo_openstack
+        class {'rdo_openstack::install': install_mode => 'all-in-one', openstack_private_interface => 'em2';}
+        class {'ceph::kernel': ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
 	disk_standard { "standard": }  							# <== 20G swap, the rest on / 
-	network_interface {"em1": bootproto  => "static";  				# <== converts the dhcp to static
-			   "em2": bootproto  => "static",
+	network_interface {"em1": bootproto   => "static";  				# <== converts the dhcp to static
+			   "em2": bootproto   => "static",
 			           ipaddress  => "10.10.4.1",
 			   	   netmask    => "255.255.255.0";}
 
-        #openstack_install {"install": install_mode => "all-in-one";}   # <== this will be an all in one install type and support cephfs
-        #							       # <== Choices for install_mode are: "all-in-one", "nova_compute", "glance"
 
   }											
 
@@ -50,33 +50,54 @@ class server-config {
 	ceph_osd_disk {'/dev/sdb':; '/dev/sdc':; '/dev/sdd':; }
         disk_standard { "standard": }   
         network_interface  {"em1": bootproto => "static";}        
-        #ceph_install   { "install": role        => "mon";}	###  <<<======   DON'T CALL THESE AS MONS'S IF THEY ARE THE QUORUM  !!  
 
    }
-   node /^ceph0[5,6]/ inherits cluster {
+   node /^ceph0[4,5]/ inherits cluster {
       include ssh-keys
-      #include ceph
-      #include openstack
+      include ceph
+      include ceph::osd_disks
+        class {'ceph::kernel': ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
+        ceph_osd_disk {'/dev/sdb':; '/dev/sdc':; '/dev/sdd':; '/dev/sde':; '/dev/sdf':;}
         disk_standard { "standard": }
-        network_interface {"eth0": bootproto => "static";}      		
+        network_interface {"em1": bootproto => "static";}      		
         #openstack_install {"install": install_mode => "nova_compute";}
         #ceph_install   { "install": role     => "mds" ; }			
-        #ceph_install_disk { $disks: }
    }
 
    node /^compute01/ inherits cluster {
       include ssh-keys
-      #include ceph
-      #include openstack
+      include ceph
+      include rdo_openstack
+      include ceph::kernel
+        #class {'rdo_openstack::install': install_mode => 'nova_compute', openstack_private_interface => 'em2';}
         disk_standard { "standard": }
-        network_interface {"eth0": bootproto => "static";
-                           "eth1": bootproto  => "static",
-                                   ipaddress  => "10.10.4.2",
-                                   netmask    => "255.255.255.0";}
-      
+        network_interface {"em1": bootproto   => "static";}
+     
+ 
         #openstack_install {"install": install_mode => "nova_compute";}
         #ceph_install   { "install": role        => "mon" ; }
         #ceph_install_disk { $disks: }
+  }
+   node /^compute02/ inherits cluster {
+      include ssh-keys
+      #include ceph
+      #include rdo_openstack
+        #class {'rdo_openstack::install': install_mode => 'nova_compute', openstack_private_interface => 'em2';}
+        disk_standard { "standard": }
+        network_interface {"em1": bootproto   => "static";
+                           "em2": bootproto   => "static",
+                                   ipaddress  => "10.10.4.3",
+                                   netmask    => "255.255.255.0";}
+  }
+   node /^compute03/ inherits cluster {
+      include ssh-keys
+      #include ceph
+      #include openstack
+        disk_standard { "standard": }
+        network_interface {"em1": bootproto   => "static";
+                           "em2": bootproto   => "static",
+                                   ipaddress  => "10.10.4.4",
+                                   netmask    => "255.255.255.0";}
   }
 
 }

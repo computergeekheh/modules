@@ -6,7 +6,7 @@ class ceph::cluster ( $primary = "", $quorum = "" ) {
 	  fail('The Primary server and the initial quorum must be set')
         } else {
              exec { "time sync":
-                command     => "/usr/sbin/ntpdate $ntp_server ",
+                command     => "/usr/sbin/ntpdate $ntp_server && /sbin/hwclock -w ",
                 onlyif      => "/usr/bin/host $ntp_server ",
                 require     => Package["ceph-deploy", "ceph"];
             }
