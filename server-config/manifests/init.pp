@@ -21,14 +21,14 @@ class server-config {
         $cephfs_mounts = "no"                                                   # <== This will install the cephFS, mount it, and present it to cinder
         $ceph_rdo = "yes"                                                       # <== this will allow Openstack to access the ceph Object Store
         $ceph_rdo_pool_name = "rbd"                                             # <== This will auto creat a pool in the object store. Use the default rbd normally.
-
+	$ceph_images_pool_name = "images"
   }
 
    node 'openstack' inherits cluster {
       include ssh-keys
       include ceph
       include rdo_openstack
-        class {'rdo_openstack::install': install_mode => 'all-in-one', openstack_private_interface => 'em2', rbd => 'ceph';}
+        class {'rdo_openstack::install': install_mode => 'all-in-one', openstack_private_interface => 'em2', ceph => 'rbd';}
         class {'ceph::kernel': ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
 	disk_standard { "standard": }  							# <== 20G swap, the rest on / 
 	network_interface {"em1": bootproto   => "static";  				# <== converts the dhcp to static
@@ -46,7 +46,9 @@ class server-config {
       #include ceph::kernel
         #class {'ceph::kernel': ceph_kernel => 'kernel', ceph_kernel_version => '2.6.32-358.el6.x86_64';}
         class {'ceph::kernel': ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
-        class {'ceph::cluster': quorum       => "ceph01.athenalab.athenahealth.com,ceph02.athenalab.athenahealth.com,ceph03.athenalab.athenahealth.com", primary => 'ceph01.athenalab.athenahealth.com';}
+        class {'ceph::cluster': quorum  => "ceph01.athenalab.athenahealth.com,ceph02.athenalab.athenahealth.com,ceph03.athenalab.athenahealth.com", 
+				primary => 'ceph01.athenalab.athenahealth.com',
+				pages   => '2000', replicas => '3';}
 	ceph_osd_disk {'/dev/sdb':; '/dev/sdc':; '/dev/sdd':; }
         disk_standard { "standard": }   
         network_interface  {"em1": bootproto => "static";}        

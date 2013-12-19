@@ -1,6 +1,6 @@
 
 
-class ceph::cluster ( $primary = "", $quorum = "" ) {
+class ceph::cluster ( $primary = "", $quorum = "", $pages = "100", $replicas = "2" ) {
 
 	if $primary == "" or $quorum == "" {
 	  fail('The Primary server and the initial quorum must be set')
@@ -34,6 +34,24 @@ class ceph::cluster ( $primary = "", $quorum = "" ) {
                 onlyif      => "/usr/bin/ssh $primary '/bin/ls /etc/ceph | grep ceph.conf ' ",
                 unless      => "/usr/bin/ssh $primary '/usr/bin/ceph -s ' ",
                 require     => Exec["gather-keys"];
+            }
+             exec { "set-pages_pg":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph osd pool set rbd pg_num $pages ' ",
+                onlyif      => "/usr/bin/ssh $primary '/bin/ls /etc/ceph | grep ceph.conf ' ",
+                unless      => "/usr/bin/ssh $primary '/usr/bin/ceph osd pool get rbd pg_num | /bin/grep $pages ' ",
+                require     => Exec["deploy-admin"];
+            }
+             exec { "set-pages_pgp":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph osd pool set rbd pgp_num $pages ' ",
+                onlyif      => "/usr/bin/ssh $primary '/bin/ls /etc/ceph | grep ceph.conf ' ",
+                unless      => "/usr/bin/ssh $primary '/usr/bin/ceph osd pool get rbd pgp_num | /bin/grep $pages ' ",
+                require     => Exec["set-pages_pg"];
+            }
+             exec { "set-replication":
+                command     => "/usr/bin/ssh $primary '/usr/bin/ceph osd pool set rbd size $replicas ' ",
+                onlyif      => "/usr/bin/ssh $primary '/bin/ls /etc/ceph | grep ceph.conf ' ",
+                unless      => "/usr/bin/ssh $primary '/usr/bin/ceph osd pool get rbd size | /bin/grep $replicas ' ",
+                require     => Exec["set-pages_pgp"];
             }
 	}
 

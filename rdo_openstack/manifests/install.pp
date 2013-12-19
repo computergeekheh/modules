@@ -1,6 +1,6 @@
 
 
-class rdo_openstack::install ($install_mode = "none", $openstack_private_interface = "", $rbd = "" ) {
+class rdo_openstack::install ($install_mode = "none", $openstack_private_interface = "", $ceph = "" ) {
 
     $ip_int = "ipaddress_$openstack_private_interface"  # if more than one network.. most often used.
     $ip = (inline_template("<%= scope[@ip_int] %>"))
@@ -68,9 +68,9 @@ class rdo_openstack::install ($install_mode = "none", $openstack_private_interfa
 	    fail('class rdo_openstack::install has FAILED !! due to not setting install_mode... Please specify install_mode.  ')
 	  }
 	}
-        case $rbd {
+        case $ceph {
 
-          ceph: {
+          rbd: {
 
             exec { "rdo admin prep":
                 command     => "/usr/bin/ssh $cluster_head 'ceph-deploy admin $hostname' ",
@@ -96,17 +96,23 @@ class rdo_openstack::install ($install_mode = "none", $openstack_private_interfa
                 content => template( "rdo_openstack/nova.erb" ),
                 require => File["/etc/cinder/cinder.conf"];
             }
+            file { "/etc/glance/glance-api.conf":
+                mode    => 0644,
+                notify  => Service["openstack-glance-api"],
+                content => template( "rdo_openstack/glance-api.erb" ),
+                require => File["/etc/nova/nova.conf"];
+            }
             file { "/etc/sysconfig/openstack-cinder-volume":
                 mode    => 0644,
-                notify  => Service["openstack-cinder-volume"],
+                notify  => Service["openstack-cinder-scheduler"],
                 content => template( "rdo_openstack/openstack-cinder-volume.erb" ),
-                require => File["/etc/nova/nova.conf"];
+                require => File["/etc/glance/glance-api.conf"];
             }
 
         service { "openstack-nova-compute":    ensure => running, require => Exec["packstack-install"]; }
         service { "openstack-cinder-scheduler":    ensure => running, require => Exec["packstack-install"]; }
         service { "openstack-cinder-volume": ensure => running, require => Exec["packstack-install"]; }
-        service { "openstack-cinder-api":      ensure => running, require => Exec["packstack-install"]; }
+        service { "openstack-glance-api":      ensure => running, require => Exec["packstack-install"]; }
 
           }
         }
