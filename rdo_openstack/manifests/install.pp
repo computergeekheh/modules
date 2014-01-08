@@ -1,9 +1,13 @@
 
-
-class rdo_openstack::install ($install_mode = "none", $openstack_private_interface = "", $ceph = "" ) {
+class rdo_openstack::install ($install_mode = "none", $openstack_private_interface = "" ) {
 
     $ip_int = "ipaddress_$openstack_private_interface"  # if more than one network.. most often used.
     $ip = (inline_template("<%= scope[@ip_int] %>"))
+
+            file { "/etc/neutron/api-paste.ini":
+                content => template( "rdo_openstack/api-paste.ini.erb" ),
+                require => Package["openstack-packstack"];
+            }
 
     if $openstack_private_interface and !$ip  {    # if this hasn't been set, simply do recipe or if set, be sure it's up or do everything but this and catch it later.
       notify {'Networking needs to be done first, delaying OpenStack install':} 
@@ -29,13 +33,11 @@ class rdo_openstack::install ($install_mode = "none", $openstack_private_interfa
             }
             exec { "set mysql for add on":
                 command     => "/usr/bin/mysql --user=root --password=$password -NBe \"grant ALL on *.* to 'root'@'%' identified by '$password'\"",
-                #onlyif      => "/bin/grep export /root/.bashrc",
                 unless      => "/usr/bin/mysql --host=$ipaddress --user=root --password=$password",
                 require     => Exec["packstack-install"];
             }
             exec { "flush privilages":
                 command     => "/usr/bin/mysql --user=root --password=$password -NBe  \"flush privileges\"",
-                #onlyif      => "/bin/grep export /root/.bashrc",
                 unless      => "/usr/bin/mysql --host=$ipaddress --user=root --password=$password",
                 require     => Exec["set mysql for add on"];
             }
@@ -68,53 +70,5 @@ class rdo_openstack::install ($install_mode = "none", $openstack_private_interfa
 	    fail('class rdo_openstack::install has FAILED !! due to not setting install_mode... Please specify install_mode.  ')
 	  }
 	}
-        case $ceph {
-
-          rbd: {
-
-            exec { "rdo admin prep":
-                command     => "/usr/bin/ssh $cluster_head 'ceph-deploy admin $hostname' ",
-                unless      => "/usr/bin/ceph -s ",
-                #onlyif      => "/usr/bin/ssh $cluster_head 'ceph -s' | /bin/grep cluster ",
-                require     => [Package["ceph"], Exec["packstack-install"]];
-            }
-            exec { "rdo keys prep":
-                command     => "/usr/bin/ssh $cluster_head 'ceph-deploy gatherkeys $hostname' ",
-                unless      => "/usr/bin/ceph -s ",
-                #onlyif      => "/usr/bin/ssh $cluster_head 'ceph -s' | /bin/grep cluster ",
-                require     => Exec["rdo admin prep"];
-            }
-            file { "/etc/cinder/cinder.conf":
-                mode    => 0644,
-                notify  => Service["openstack-cinder-volume"],
-                content => template( "rdo_openstack/cinder.erb" ),
-                require => Exec["rdo keys prep"];
-            }
-            file { "/etc/nova/nova.conf":
-                mode    => 0644,
-                notify  => Service["openstack-nova-compute"],
-                content => template( "rdo_openstack/nova.erb" ),
-                require => File["/etc/cinder/cinder.conf"];
-            }
-            file { "/etc/glance/glance-api.conf":
-                mode    => 0644,
-                notify  => Service["openstack-glance-api"],
-                content => template( "rdo_openstack/glance-api.erb" ),
-                require => File["/etc/nova/nova.conf"];
-            }
-            file { "/etc/sysconfig/openstack-cinder-volume":
-                mode    => 0644,
-                notify  => Service["openstack-cinder-scheduler"],
-                content => template( "rdo_openstack/openstack-cinder-volume.erb" ),
-                require => File["/etc/glance/glance-api.conf"];
-            }
-
-        service { "openstack-nova-compute":    ensure => running, require => Exec["packstack-install"]; }
-        service { "openstack-cinder-scheduler":    ensure => running, require => Exec["packstack-install"]; }
-        service { "openstack-cinder-volume": ensure => running, require => Exec["packstack-install"]; }
-        service { "openstack-glance-api":      ensure => running, require => Exec["packstack-install"]; }
-
-          }
-        }
     }
 }

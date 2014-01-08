@@ -9,6 +9,7 @@ class server-config {
 
    node 'cluster' inherits default {  
                                                                                        
+	#    Ceph Cluster
  	$cluster_head = "ceph01.athenalab.athenahealth.com"
    	#    openstack_cluster' 							# <== defines global parameters for the openstack system
 	$dashboard = "openstack.athenalab.athenahealth.com"				# <== dashboard is the horizon server. This should be brought up first.
@@ -20,16 +21,16 @@ class server-config {
         $cephfs = "no"                                                         # <== This will install the cephFS kernel
         $cephfs_mounts = "no"                                                   # <== This will install the cephFS, mount it, and present it to cinder
         $ceph_rdo = "yes"                                                       # <== this will allow Openstack to access the ceph Object Store
-        $ceph_rdo_pool_name = "rbd"                                             # <== This will auto creat a pool in the object store. Use the default rbd normally.
-	$ceph_images_pool_name = "images"
   }
 
    node 'openstack' inherits cluster {
       include ssh-keys
       include ceph
       include rdo_openstack
-        class {'rdo_openstack::install': install_mode => 'all-in-one', openstack_private_interface => 'em2', ceph => 'rbd';}
-        class {'ceph::kernel': ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
+      include rdo_openstack::ceph_integration
+        class {'rdo_openstack::install':  install_mode => 'all-in-one', openstack_private_interface => 'em2';}
+	#class {'rdo_openstack::ceph_integration': ceph => 'rbd', ceph_rdo_pool_name => 'rbd', ceph_images_pool_name => 'images';}
+        class {'ceph::kernel':           ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
 	disk_standard { "standard": }  							# <== 20G swap, the rest on / 
 	network_interface {"em1": bootproto   => "static";  				# <== converts the dhcp to static
 			   "em2": bootproto   => "static",
@@ -47,7 +48,6 @@ class server-config {
         #class {'ceph::kernel': ceph_kernel => 'kernel', ceph_kernel_version => '2.6.32-358.el6.x86_64';}
         class {'ceph::kernel': ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
         class {'ceph::cluster': quorum  => "ceph01.athenalab.athenahealth.com,ceph02.athenalab.athenahealth.com,ceph03.athenalab.athenahealth.com", 
-				primary => 'ceph01.athenalab.athenahealth.com',
 				pages   => '2000', replicas => '3';}
 	ceph_osd_disk {'/dev/sdb':; '/dev/sdc':; '/dev/sdd':; }
         disk_standard { "standard": }   
@@ -58,12 +58,12 @@ class server-config {
       include ssh-keys
       include ceph
       include ceph::osd_disks
+      include ceph::mds_set
         class {'ceph::kernel': ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
         ceph_osd_disk {'/dev/sdb':; '/dev/sdc':; '/dev/sdd':; '/dev/sde':; '/dev/sdf':;}
         disk_standard { "standard": }
         network_interface {"em1": bootproto => "static";}      		
         #openstack_install {"install": install_mode => "nova_compute";}
-        #ceph_install   { "install": role     => "mds" ; }			
    }
 
    node /^compute01/ inherits cluster {
@@ -71,7 +71,7 @@ class server-config {
       include ceph
       include rdo_openstack
       include ceph::kernel
-        #class {'rdo_openstack::install': install_mode => 'nova_compute', openstack_private_interface => 'em2';}
+        class {'rdo_openstack::install': install_mode => 'nova_compute', openstack_private_interface => 'em2';}
         disk_standard { "standard": }
         network_interface {"em1": bootproto   => "static";}
      

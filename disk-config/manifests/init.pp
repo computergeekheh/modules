@@ -231,7 +231,7 @@ define disk_conf($second_controller = "none", $volgroup = "vg1", $mountpoint = "
                     exec { "size-ext4-$volgroup/$title":
                         command => "/sbin/resize2fs -p /dev/$volgroup/$title",
                         path    => "/bin:/usr/bin:/usr/sbin:/sbin",
-                        unless  => "/usr/bin/test \$[`(lvdisplay /dev/$volgroup/$title --units k | /bin/grep 'LV Size' | /bin/awk '{print \$3}' | /bin/sed 's/.00//g')`] -eq \$[`(tune2fs -l /dev/$volgroup/$title |/bin/grep -i '^Block Count'|awk '{print \$3}')` * `(tune2fs -l /dev/$volgroup/$title|/bin/grep -i '^Block size'| /bin/awk '{print \$3}')` /1024 ]",
+                        unless  => "/usr/bin/test \$[`(tune2fs -l /dev/$volgroup/$title | /bin/grep -i '^Block Count'|cut -b 27-)` * `(tune2fs -l /dev/$volgroup/$title | /bin/grep -i '^Block size'|cut -b 27-)` /1000000000 ] -ge $[`(lvs | grep $title | awk '{print \$4}' | cut -d . -f 1 )`]",
                         timeout => 3600,
                         require => Exec["mkfs.ext4-$volgroup/$title"];
                     }

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+export  FACTER_virsh_uuid=`/usr/bin/virsh secret-list | /bin/grep Unused | awk '{print $1}'`
+
+
+

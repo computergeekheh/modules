@@ -24,7 +24,23 @@ volume_group=cinder-volumes
 volume_driver=cinder.volume.drivers.rbd.RBDDriver
 rbd_pool=<%= ceph_rdo_pool_name %>
 rbd_user=admin
-rbd_secret_uuid=88822f8e-adcf-3805-e676-514e6c4c2b70
+<% if virsh_uuid != "" -%>
+rbd_secret_uuid=<%= virsh_uuid %>
+<% end -%>
+glance_api_version=2
+
+# path to the ceph configuration file to use (string value)
+# #rbd_ceph_conf=
+#
+## where to store temporary image files if the volume driver
+## does not write them directly to the volume (string value)
+##volume_tmp_dir=<None>
+#
+## maximum number of nested clones that can be taken of a
+## volume before enforcing a flatten prior to next clone. A
+## value of zero disables cloning (integer value)
+##rbd_max_clone_depth=5
+#
 
 sql_connection=mysql://cinder:<%= password %>@<%= dashboard %>/cinder
 qpid_reconnect_timeout=0

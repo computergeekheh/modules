@@ -85,7 +85,27 @@ connection_type=libvirt
 volume_driver=nova.volume.drivers.rbd.RBDDriver
 rbd_pool=<%= ceph_rdo_pool_name %>
 rbd_user=admin
-rbd_secret_uuid=88822f8e-adcf-3805-e676-514e6c4c2b70
+<% if virsh_uuid != "" -%>
+rbd_secret_uuid=<%= virsh_uuid %>
+<% end -%>
+
+# Libvirt handlers for remote volumes. (list value)
+# #libvirt_volume_drivers=iscsi=nova.virt.libvirt.volume.LibvirtISCSIVolumeDriver,iser=nova.virt.libvirt.volume.LibvirtISERVolumeDriver,local=nova.virt.libvirt.volume.LibvirtVolumeDriver,fake=nova.virt.libvirt.volume.LibvirtFakeVolumeDriver,rbd=nova.virt.libvirt.volume.LibvirtNetVolumeDriver,sheepdog=nova.virt.libvirt.volume.LibvirtNetVolumeDriver,nfs=nova.virt.libvirt.volume.LibvirtNFSVolumeDriver,aoe=nova.virt.libvirt.volume.LibvirtAOEVolumeDriver,glusterfs=nova.virt.libvirt.volume.LibvirtGlusterfsVolumeDriver,fibre_channel=nova.virt.libvirt.volume.LibvirtFibreChannelVolumeDriver,scality=nova.virt.libvirt.volume.LibvirtScalityVolumeDriver
+#
+# VM Images format. Acceptable values are: raw, qcow2,
+# lvm,rbd, default. If default is specified, then
+# use_cow_images flag is used instead of this one. (string
+# value)
+#libvirt_images_type=default
+#
+# the RADOS pool in which rbd volumes are stored (string
+# value)
+#libvirt_images_rbd_pool=rbd
+#
+# path to the ceph configuration file to use (string value)
+#libvirt_images_rbd_ceph_conf=
+#
+#
 
 [rpc_notifier2]
 [matchmaker_redis]
