@@ -43,6 +43,7 @@ class ceph::cluster ( $quorum = "", $pages = "100", $replicas = "2" ) {
             }
              exec { "set-pages_pgp":
                 command     => "/usr/bin/ssh $cluster_head '/usr/bin/ceph osd pool set rbd pgp_num $pages ' ",
+		returns     => [0,11],
                 onlyif      => "/usr/bin/ssh $cluster_head '/bin/ls /etc/ceph | grep ceph.conf ' ",
                 unless      => "/usr/bin/ssh $cluster_head '/usr/bin/ceph osd pool get rbd pgp_num | /bin/grep $pages ' ",
                 require     => Exec["set-pages_pg"];

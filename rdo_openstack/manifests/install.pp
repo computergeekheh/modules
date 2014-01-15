@@ -4,9 +4,13 @@ class rdo_openstack::install ($install_mode = "none", $openstack_private_interfa
     $ip_int = "ipaddress_$openstack_private_interface"  # if more than one network.. most often used.
     $ip = (inline_template("<%= scope[@ip_int] %>"))
 
-            file { "/etc/neutron/api-paste.ini":
-                content => template( "rdo_openstack/api-paste.ini.erb" ),
+            file { "/etc/neutron":
+                ensure  => directory,
                 require => Package["openstack-packstack"];
+            }
+            file { "/etc/neutron/api-paste.ini":
+                content => template( "rdo_openstack/neutron_api-paste.ini.erb" ),
+                require => File["/etc/neutron"];
             }
 
     if $openstack_private_interface and !$ip  {    # if this hasn't been set, simply do recipe or if set, be sure it's up or do everything but this and catch it later.
@@ -27,7 +31,7 @@ class rdo_openstack::install ($install_mode = "none", $openstack_private_interfa
                 environment => [ "HOME=/root"],
                 command     => "/usr/bin/packstack --answer-file=/opt/packstack-answers.$fqdn ",
                 timeout     => 7200,
-                unless      => "/sbin/chkconfig --list | /bin/grep openstack",
+                unless      => "/bin/rpm -qa | /bin/grep openstack-dashboard",
                 onlyif      => "/usr/bin/facter | /bin/grep 'gateway =>'",
                 require     => File["/opt/packstack-answers.$fqdn"];
             }
@@ -46,25 +50,27 @@ class rdo_openstack::install ($install_mode = "none", $openstack_private_interfa
 
             package { "mysql": ensure  => latest; }
 
-            file { "/opt/packstack-answers.$fqdn":
-                mode    => 0644,
-                replace => false,
-                content => template( "rdo_openstack/packstack-answers_nova_compute.erb" ),
-                require => Package["openstack-packstack"];
-            }
-            exec { "node specific answer change":
-                command     => "/bin/bash -c \"sed -i 's/$dashboard/`host $dashboard | awk '{print \$4}'`/g' /opt/packstack-answers.$fqdn \" ",
-                onlyif      => "/bin/grep $dashboard /opt/packstack-answers.$fqdn",
-                require     => File["/opt/packstack-answers.$fqdn"];
-            }
-            exec { "packstack-install":
-                environment => [ "HOME=/root"],
-                command     => "/usr/bin/packstack --answer-file=/opt/packstack-answers.$fqdn ",
-                timeout     => 7200,
-                unless      => "/sbin/chkconfig --list | /bin/grep openstack",
-                onlyif      => "/usr/bin/facter | /bin/grep 'gateway =>'",
-                require     => Exec["node specific answer change"];
-            }
+	    include rdo_openstack::compute_node
+
+#            file { "/opt/packstack-answers.$fqdn":
+#                mode    => 0644,
+#                replace => false,
+#                content => template( "rdo_openstack/packstack-answers_nova_compute.erb" ),
+#                require => Package["openstack-packstack"];
+#            }
+#            exec { "node specific answer change":
+#                command     => "/bin/bash -c \"sed -i 's/$dashboard/`host $dashboard | awk '{print \$4}'`/g' /opt/packstack-answers.$fqdn \" ",
+#                onlyif      => "/bin/grep $dashboard /opt/packstack-answers.$fqdn",
+#                require     => File["/opt/packstack-answers.$fqdn"];
+#            }
+#            exec { "packstack-install":
+#                environment => [ "HOME=/root"],
+#                command     => "/usr/bin/packstack --answer-file=/opt/packstack-answers.$fqdn ",
+#                timeout     => 7200,
+#                unless      => "/sbin/chkconfig --list | /bin/grep openstack",
+#                onlyif      => "/usr/bin/facter | /bin/grep 'gateway =>'",
+#                require     => Exec["node specific answer change"];
+#            }
           }
 	  none: {
 	    fail('class rdo_openstack::install has FAILED !! due to not setting install_mode... Please specify install_mode.  ')

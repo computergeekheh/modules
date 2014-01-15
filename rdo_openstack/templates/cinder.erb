@@ -17,9 +17,9 @@ qpid_password=notused
 qpid_heartbeat=60
 qpid_protocol=tcp
 qpid_tcp_nodelay=true
-iscsi_ip_address=<%= dashboard %>
-iscsi_helper=tgtadm
-volume_group=cinder-volumes
+#iscsi_ip_address=<%= dashboard %>
+#iscsi_helper=tgtadm
+#volume_group=cinder-volumes
 
 volume_driver=cinder.volume.drivers.rbd.RBDDriver
 rbd_pool=<%= ceph_rdo_pool_name %>
@@ -28,9 +28,10 @@ rbd_user=admin
 rbd_secret_uuid=<%= virsh_uuid %>
 <% end -%>
 glance_api_version=2
+rbd_ceph_conf=/etc/ceph/ceph.conf
+rbd_flatten_volume_from_snapshot=false
+rbd_max_clone_depth=5
 
-# path to the ceph configuration file to use (string value)
-# #rbd_ceph_conf=
 #
 ## where to store temporary image files if the volume driver
 ## does not write them directly to the volume (string value)

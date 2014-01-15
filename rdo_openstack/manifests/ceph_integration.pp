@@ -37,7 +37,7 @@ class rdo_openstack::ceph_integration ( $ceph = "rbd", $ceph_rdo_pool_name = "rb
                 command     => "/usr/bin/virsh secret-set-value --secret `/usr/bin/virsh secret-list | /bin/grep Unused | awk '{print \$1}'` --base64 `/usr/bin/ceph auth list | /bin/grep -A 1 client.admin | awk '{print \$2}'` ",
                 unless      => "/usr/bin/virsh secret-get-value `/usr/bin/virsh secret-list | /bin/grep Unused | awk '{print \$1}'` ",
                 onlyif      => "/bin/ls /opt/secret.xml ",
-                require     => Exec["libvert define secrets"];
+                require     => [Service["libvirtd"], Exec["libvert define secrets"]];
             }
             file { "/usr/lib/ruby/site_ruby/1.8/facter/virsh_uuid.rb":
                 ensure      => present,
@@ -57,21 +57,34 @@ class rdo_openstack::ceph_integration ( $ceph = "rbd", $ceph_rdo_pool_name = "rb
                 content     => template( "rdo_openstack/nova.erb" ),
                 require     => File["/etc/cinder/cinder.conf"];
             }
-            file { "/usr/lib/python2.6/site-packages/qpid/messaging/driver.py":
-                source      => "puppet:///modules/rdo_openstack/driver.py",
+            file { "/etc/nova/api-paste.ini":
+                mode        => 0644,
+                notify      => Service["openstack-nova-api"],
+                content     => template( "rdo_openstack/nova_api-paste.ini.erb" ),
                 require     => File["/etc/nova/nova.conf"];
+            }
+            file { "/usr/lib/python2.6/site-packages/qpid/messaging/driver.py":
+                source      => "puppet:///modules/rdo_openstack/messaging_driver.py",
+                require     => File["/etc/nova/api-paste.ini"];
+            }
+            file { "/usr/lib/python2.6/site-packages/cinder/volume/driver.py":
+                source      => "puppet:///modules/rdo_openstack/volume_driver.py",
+                require     => File["/usr/lib/python2.6/site-packages/qpid/messaging/driver.py"];
             }
             file { "/etc/sysconfig/openstack-cinder-volume":
                 mode        => 0644,
                 notify      => Service["openstack-cinder-scheduler"],
                 content     => template( "rdo_openstack/openstack-cinder-volume.erb" ),
-                require     => File["/usr/lib/python2.6/site-packages/qpid/messaging/driver.py"];
+                require     => File["/usr/lib/python2.6/site-packages/cinder/volume/driver.py"];
             }
 
-              service { "openstack-nova-compute":    ensure => running, require => Class["rdo_openstack::install"]; }
-              service { "openstack-cinder-scheduler":    ensure => running, require => Class["rdo_openstack::install"]; }
-              service { "openstack-cinder-volume": ensure => running, require => Class["rdo_openstack::install"]; }
-              service { "openstack-glance-api":      ensure => running, require => Class["rdo_openstack::install"]; }
+ 	      package { "openstack-nova-api":         ensure  => latest; }
+
+              service { "openstack-nova-compute":     ensure => running, enable => true, require => Class["rdo_openstack::install"]; }
+              service { "openstack-cinder-scheduler": ensure => running, enable => true, require => Class["rdo_openstack::install"]; }
+              service { "openstack-cinder-volume":    ensure => running, enable => true, require => Class["rdo_openstack::install"]; }
+              service { "openstack-nova-api":         ensure => running, enable => true, require => [Package["openstack-nova-api"], Class["rdo_openstack::install"]]; }
+              service { "libvirtd":                   ensure => running, enable => true; } 
           }
         }
 }
