@@ -15,7 +15,7 @@ class rdo_openstack::compute_node {
         service { "neutron-l3-agent":   	ensure => running, enable => true, require => Package["openstack-neutron"]; }
         service { "neutron-dhcp-agent": 	ensure => running, enable => true, require => Package["openstack-neutron"]; }
         service { "neutron-metadata-agent": 	ensure => running, enable => true, require => Package["openstack-neutron"]; }
-#        service { "neutron-server":          	ensure => running, enable => true, require => Package["openvswitch"]; }
+        service { "neutron-openvswitch-agent":  ensure => running, enable => true, require => File["/etc/neutron/plugin.ini"]; }
 
 
 
@@ -40,6 +40,19 @@ class rdo_openstack::compute_node {
                 source      => "puppet:///modules/rdo_openstack/dhcp_agent.ini",
                 require     => Package["openstack-neutron"];
             }
+            file { "/etc/neutron/plugin.ini":
+		ensure	    => link,
+                notify      => Service["neutron-l3-agent"],
+		target	    => "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini",
+                require     => Package["openstack-neutron"];
+            }
+            file { "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini":
+                owner       => "root",
+                group       => "neutron",
+                notify      => Service["neutron-l3-agent"],
+                content     => template( "rdo_openstack/ovs_neutron_plugin.ini.erb" ),
+                require     => Package["openstack-neutron"];
+            }
             exec { "add br-int":
                 command     => "/usr/bin/ovs-vsctl add-br br-int ",
                 unless      => "/sbin/ifconfig | /bin/grep br-int ",
@@ -51,4 +64,10 @@ class rdo_openstack::compute_node {
                 require     => Service["openvswitch"];
             }
 
+        package { ["virt-manager", "xorg-x11-xauth"]: ensure  => latest; }
+
+            exec { "add all fonts":  ### Yea, yea.... but I need all the fonts, and this is LAZY / EASY
+                command     => "yum install -y xorg-x11-font* ",
+                unless      => "/bin/rpm -qa | /bin/grep xorg-x11-fonts ",
+            }
 }

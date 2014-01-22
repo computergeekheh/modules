@@ -35,10 +35,15 @@ class rdo_openstack::install ($install_mode = "none", $openstack_private_interfa
                 onlyif      => "/usr/bin/facter | /bin/grep 'gateway =>'",
                 require     => File["/opt/packstack-answers.$fqdn"];
             }
-            exec { "set mysql for add on":
+            exec { "set mysql for services":
                 command     => "/usr/bin/mysql --user=root --password=$password -NBe \"grant ALL on *.* to 'root'@'%' identified by '$password'\"",
                 unless      => "/usr/bin/mysql --host=$ipaddress --user=root --password=$password",
                 require     => Exec["packstack-install"];
+            }
+            exec { "set mysql for add on":
+                command     => "/usr/bin/mysql --user=root --password=$password -NBe \"grant ALL on *.* to 'keystone'@'%' identified by '$password'\"",
+                unless      => "/usr/bin/mysql --host=$ipaddress --user=root --password=$password",
+                require     => Exec["set mysql for services"];
             }
             exec { "flush privilages":
                 command     => "/usr/bin/mysql --user=root --password=$password -NBe  \"flush privileges\"",

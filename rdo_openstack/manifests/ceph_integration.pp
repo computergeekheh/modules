@@ -2,6 +2,16 @@
 
 class rdo_openstack::ceph_integration ( $ceph = "rbd", $ceph_rdo_pool_name = "rbd", $ceph_images_pool_name = "images", $virsh_uuid = "$virsh_uuid" ) {
 
+        $main = inline_template("<%= %x{/usr/bin/host ${dashboard} | awk '{print \$4}'}.chomp %>")
+
+            file { "/root/.bashrc":
+                owner   => "root",
+                group   => "root",
+                mode    => 0644,
+                content => template( "rdo_openstack/bashrc.erb" ),
+                require => Package["ceph"];
+            }
+
         case $ceph {
 
           rbd: {
@@ -24,6 +34,7 @@ class rdo_openstack::ceph_integration ( $ceph = "rbd", $ceph_rdo_pool_name = "rb
             file { "/opt/secret.xml":
                 ensure      => present,
                 mode        => 0655,
+                notify      => Service["libvirtd"],
                 source      => "puppet:///modules/rdo_openstack/secret.xml",
                 require     => Exec["glance images pool"];
             }

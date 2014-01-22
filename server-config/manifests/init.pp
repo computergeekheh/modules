@@ -32,10 +32,10 @@ class server-config {
 	 #class {'rdo_openstack::ceph_integration': ceph => 'rbd', ceph_rdo_pool_name => 'rbd', ceph_images_pool_name => 'images';}
         class {'ceph::kernel':           ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
 	disk_standard { "standard": }  							# <== 20G swap, the rest on / 
-	network_interface {"em1": bootproto   => "static";  				# <== converts the dhcp to static
-			   "em2": bootproto   => "static",
-			           ipaddress  => "10.10.4.1",
-			   	   netmask    => "255.255.255.0";}
+	#network_interface {"em1": bootproto   => "static";  				# <== converts the dhcp to static
+	#		   "em2": bootproto   => "static",
+	#		           ipaddress  => "10.10.4.1",
+	#		   	   netmask    => "255.255.255.0";}
 
 
   }											
@@ -58,7 +58,7 @@ class server-config {
       include ssh-keys
       include ceph
       include ceph::osd_disks
-      include ceph::mds_set
+      #include ceph::mds_set
         class {'ceph::kernel': ceph_kernel   => 'kernel-uek', ceph_kernel_version => '3.8.13-16.2.1.el6uek.x86_64';}
         ceph_osd_disk {'/dev/sdb':; '/dev/sdc':; '/dev/sdd':; '/dev/sde':; '/dev/sdf':;}
         disk_standard { "standard": }
@@ -71,17 +71,15 @@ class server-config {
       include ceph
       include ceph::kernel
       include rdo_openstack
-      #include rdo_openstack::compute_node
       include rdo_openstack::ceph_integration
         class {'rdo_openstack::install': install_mode => 'nova_compute', openstack_private_interface => 'em2';}
         disk_standard { "standard": }
-        network_interface {"em1": bootproto   => "static";
-                           "em2": bootproto   => "static",
-                                  ipaddress   => "10.10.4.2",
-                                  netmask     => "255.255.255.0";}
+        #network_interface {"em1": bootproto   => "static";
+        #                   "em2": bootproto   => "static",
+        #                          ipaddress   => "10.10.4.2",
+        #                          netmask     => "255.255.255.0";}
      
  
-        #openstack_install {"install": install_mode => "nova_compute";}
         #ceph_install   { "install": role        => "mon" ; }
         #ceph_install_disk { $disks: }
   }
@@ -91,20 +89,20 @@ class server-config {
       #include rdo_openstack
         #class {'rdo_openstack::install': install_mode => 'nova_compute', openstack_private_interface => 'em2';}
         disk_standard { "standard": }
-        network_interface {"em1": bootproto   => "static";
-                           "em2": bootproto   => "static",
-                                   ipaddress  => "10.10.4.3",
-                                   netmask    => "255.255.255.0";}
+        network_interface {"em1": bootproto   => "static";}
+        #                   "em2": bootproto   => "static",
+        #                           ipaddress  => "10.10.4.3",
+        #                           netmask    => "255.255.255.0";}
   }
    node /^compute03/ inherits cluster {
       include ssh-keys
       #include ceph
       #include openstack
         disk_standard { "standard": }
-        network_interface {"em1": bootproto   => "static";
-                           "em2": bootproto   => "static",
-                                   ipaddress  => "10.10.4.4",
-                                   netmask    => "255.255.255.0";}
+        network_interface {"em1": bootproto   => "static";}
+        #                   "em2": bootproto   => "static",
+        #                           ipaddress  => "10.10.4.4",
+        #                           netmask    => "255.255.255.0";}
   }
 
 }

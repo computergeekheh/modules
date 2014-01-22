@@ -19,7 +19,7 @@ admin_password=password
 auth_protocol=http
 admin_tenant_name=services
 auth_host=<%= dashboard %>
-auth_uri = http://<%= dashboard %>:5000
+auth_uri = http://<%= dashboard %>:5000/
 
 [filter:extensions]
 paste.filter_factory = neutron.api.extensions:plugin_aware_extension_middleware_factory
